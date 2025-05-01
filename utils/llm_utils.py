@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
+import streamlit as st
+
 
 # Load .env variables
 load_dotenv()
