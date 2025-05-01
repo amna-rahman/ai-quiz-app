@@ -7,7 +7,8 @@ from google.generativeai import GenerativeModel
 load_dotenv()
 
 # ✅ Configure Gemini using API key from .env
-genai.configure(api_key=st.secrets("GOOGLE_API_KEY"))
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+
 
 def get_gemini_response(prompt: str) -> str:
     model = GenerativeModel("gemini-1.5-flash")
