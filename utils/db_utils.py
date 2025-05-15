@@ -1,33 +1,29 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import os
-from dotenv import load_dotenv
-import json
 import streamlit as st
 
-load_dotenv()
-
-# Authorize with Google Sheets
+# Google Sheets API setup
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
+# Load credentials from streamlit secrets (make sure you set these in your Streamlit secrets)
 creds_dict = st.secrets["gcp_service_account"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
 client = gspread.authorize(creds)
 
-# Open your Google Sheet
+# Open your Google Sheet by key
 sheet = client.open_by_key(st.secrets["GOOGLE_SHEET_ID"])
 
-# Access the individual sheets
+# Access worksheets
 users_sheet = sheet.worksheet("Users")
 quizzes_sheet = sheet.worksheet("Quizzes")
 
-# Try to access LearningContent sheet or create it
+# Try to get or create LearningContent worksheet
 try:
     content_sheet = sheet.worksheet("LearningContent")
-except:
+except gspread.exceptions.WorksheetNotFound:
     content_sheet = sheet.add_worksheet(title="LearningContent", rows="100", cols="2")
-    content_sheet.append_row(["content_id", "content_text"])  # Header row
+    content_sheet.append_row(["content_id", "content_text"])  # Add header
 
 # -------------------------------
 # USER MANAGEMENT
@@ -44,7 +40,8 @@ def get_user(username, password):
     records = users_sheet.get_all_records()
     for i, row in enumerate(records):
         if row["username"] == username and row["password"] == password:
-            return [i + 2, row["username"]]  # +2 accounts for header row and 1-based indexing
+            # Return row number and username (row index + header + 1)
+            return [i + 2, row["username"]]
     return None
 
 def get_all_users():
@@ -73,17 +70,14 @@ def get_admin(username, password):
 
 def save_learning_content(content):
     """
-    Save the learning content in the LearningContent sheet.
-    Overwrites any existing content.
+    Overwrite existing content with new content in LearningContent sheet.
     """
     existing = content_sheet.get_all_values()
+    # Delete all rows except header if content exists
     if len(existing) > 1:
-        content_sheet.delete_rows(2)  # Remove old content, keep header
+        content_sheet.delete_rows(2, len(existing))
     content_sheet.append_row(["1", content])
 
 def get_latest_content():
-    """
-    Get the latest learning content from the LearningContent sheet.
-    """
     records = content_sheet.get_all_records()
     return records[0]["content_text"] if records else ""
