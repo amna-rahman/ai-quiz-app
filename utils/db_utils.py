@@ -1,6 +1,8 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
+import json
+from datetime import datetime
 
 # Google Sheets API setup
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -51,11 +53,59 @@ def get_all_users():
 # QUIZ MANAGEMENT
 # -------------------------------
 
-def insert_quiz(user_id, quiz_data, score):
-    quizzes_sheet.append_row([user_id, quiz_data, score])
+def insert_quiz(user_id, quiz_type, quiz_data, score):
+    """
+    Insert a quiz attempt for a user.
+
+    Args:
+        user_id (int or str): User identifier (row number or username)
+        quiz_type (str): "traditional" or "ai_generated"
+        quiz_data (dict or str): Quiz data (questions/answers), saved as JSON string
+        score (int): User's quiz score
+    """
+    if isinstance(quiz_data, dict):
+        quiz_data_str = json.dumps(quiz_data)
+    else:
+        quiz_data_str = str(quiz_data)
+
+    timestamp = datetime.utcnow().isoformat()
+    quizzes_sheet.append_row([user_id, quiz_type, quiz_data_str, score, timestamp])
 
 def get_all_quizzes():
+    """
+    Returns all quiz attempts as list of dicts with keys:
+    user_id, quiz_type, quiz_data (json string), score, timestamp
+    """
     return quizzes_sheet.get_all_records()
+
+def get_all_quiz_results_with_users():
+    """
+    Combines quiz attempts with user info for admin reports.
+    Returns list of dicts with keys:
+    username, email, quiz_type, quiz_data, score, timestamp
+    """
+    users = users_sheet.get_all_records()
+    quizzes = quizzes_sheet.get_all_records()
+
+    # Build a map user_id -> user info (assuming user_id is row number - 2)
+    user_map = {}
+    for idx, user in enumerate(users):
+        user_map[str(idx + 2)] = user  # key is string of row number
+
+    results = []
+    for q in quizzes:
+        user_id = str(q.get("user_id"))
+        user_info = user_map.get(user_id, {})
+        result = {
+            "username": user_info.get("username", "Unknown"),
+            "email": user_info.get("email", ""),
+            "quiz_type": q.get("quiz_type", ""),
+            "quiz_data": q.get("quiz_data", ""),
+            "score": q.get("score", ""),
+            "timestamp": q.get("timestamp", "")
+        }
+        results.append(result)
+    return results
 
 # -------------------------------
 # ADMIN AUTHENTICATION
