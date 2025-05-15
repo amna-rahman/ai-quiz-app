@@ -1,13 +1,36 @@
 import streamlit as st
+from utils.db_utils import insert_user
 
 st.set_page_config(page_title="🏠 Home - Quiz App", layout="centered")
 
 st.title("🏠 Welcome to AI Quiz App")
 
-# Check if user is logged in
-if "user_id" in st.session_state:
-    st.success(f"Hello, **{st.session_state['username']}**! 🎉")
+if "user_id" not in st.session_state:
+    st.subheader("📝 Survey Access / Login")
+    name = st.text_input("Your Name")
+    user_id = st.text_input("Your ID (or any unique identifier)")
 
+    if st.button("Start Quiz"):
+        if name.strip() and user_id.strip():
+            # Save to session state for quiz usage
+            st.session_state["user_name"] = name.strip()
+            st.session_state["user_id"] = user_id.strip()
+
+            # Optional: save user info without password, ignore if exists
+            try:
+                insert_user(name.strip(), "N/A", f"{user_id.strip()}@survey.local")
+            except Exception:
+                pass
+
+            st.success(f"Welcome {name}! You can now take the quiz.")
+            st.info("Use the sidebar to access **Learning Content**, **Take Quizzes**, and **Review History**.")
+            st.experimental_rerun()  # Refresh to update UI after login
+        else:
+            st.warning("⚠️ Please enter both your name and ID.")
+else:
+    # User is logged in
+    st.success(f"Hello, **{st.session_state['user_name']}**! 🎉")
+    
     is_admin = st.session_state.get("is_admin", False)
 
     if is_admin:
@@ -34,7 +57,5 @@ if "user_id" in st.session_state:
 
         Use the sidebar to go to **Learning Content** and then **Take Quizzes**.
         """)
-    
+
     st.info("Use the sidebar to access all features.")
-else:
-    st.warning("Please log in from the **Login** page in the sidebar to continue.")
