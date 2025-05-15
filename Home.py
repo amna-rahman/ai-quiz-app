@@ -24,7 +24,9 @@ if "user_id" not in st.session_state:
 
             st.success(f"Welcome {name}! You can now take the quiz.")
             st.info("Use the sidebar to access **Learning Content**, **Take Quizzes**, and **Review History**.")
-            st.experimental_rerun()  # Refresh to update UI after login
+            
+            # Instead of experimental_rerun, ask user to refresh or navigate manually
+            st.write("👉 Please refresh the page or use the sidebar to continue.")
         else:
             st.warning("⚠️ Please enter both your name and ID.")
 else:
