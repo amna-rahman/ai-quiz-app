@@ -1,27 +1,37 @@
-def generate_traditional_quiz(content):
-    # This is a placeholder. You can improve it later using NLP or LLM.
-    sentences = [s.strip() for s in content.split('.') if len(s.strip()) > 10]
-    quiz = [{"question": f"What does this sentence mean? '{s}'", "answer": s} for s in sentences[:5]]
-    return quiz
+import db_utils
+import json
+import random
 
-def generate_ai_quiz(content):
-    # You can later call Gemini or OpenAI here.
-    # For now, just mock with a different format.
-    return [
-        {"question": f"What is a key concept from this content?", "answer": "AI-generated answer 1"},
-        {"question": f"What can we infer from this content?", "answer": "AI-generated answer 2"}
-    ]
+def generate_question_answer_pairs_from_text(text, num_questions=5):
+    """
+    Placeholder implementation:
+    Generates dummy Q&A pairs from text.
+    Replace this logic with a proper QA model or prompt-based LLM approach.
+    """
+    sentences = text.split(".")
+    questions = []
+    for i in range(min(num_questions, len(sentences))):
+        q = f"What is the meaning of: {sentences[i].strip()}?"
+        a = f"Explanation of: {sentences[i].strip()}"
+        questions.append({"question": q, "answer": a})
+    return questions
 
-# Temporary in-memory quiz history
-quiz_db = []
-quiz_history = []
+def score_quiz(questions, user_answers):
+    """
+    Compare expected answers with user's answers.
+    Very basic string match for now.
+    """
+    score = 0
+    for i in range(len(questions)):
+        correct = questions[i]["answer"].strip().lower()
+        user = user_answers[i].strip().lower()
+        if correct == user:
+            score += 1
+    return score
 
-def save_quiz_to_db(quiz, quiz_type):
-    quiz_db.append({
-        "type": quiz_type,
-        "questions": quiz
-    })
-
-def get_quiz_history():
-    # Example: Return mock data or load from your DB
-    return quiz_history
+def save_quiz_to_db(user_id, quiz_type, questions, score, learning_text=""):
+    """
+    Save the quiz attempt to Google Sheets via db_utils.
+    """
+    quiz_data = {"questions": questions}
+    db_utils.insert_quiz(user_id, quiz_type, quiz_data, score, learning_text)
